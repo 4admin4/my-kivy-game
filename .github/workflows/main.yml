@@ -11,20 +11,18 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libffi-dev python3-dev
+          sudo apt-get install -y build-essential libffi-dev python3-dev \
+          libssl-dev cmake git zip unzip openjdk-17-jdk python3-pip \
+          autoconf libtool pkg-config zlib1g-dev libncurses5-dev \
+          libncursesw5-dev libgdbm-dev libsqlite3-dev libdb5.3-dev \
+          libbz2-dev libexpat1-dev liblzma-dev tk-dev libffi-dev lld
           pip install --upgrade pip
           pip install buildozer cython==0.29.33
 
       - name: Build APK with Buildozer
         run: |
+          # Ця команда автоматично погоджується на всі ліцензії Android
           yes | buildozer -v android debug
-        continue-on-error: false
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: package
-          path: bin/*.apk
