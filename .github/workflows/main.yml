@@ -24,18 +24,18 @@ jobs:
 
       - name: Build APK with Buildozer
         run: |
-          # 1. Приймаємо ліцензії через прямий шлях до sdkmanager
-          mkdir -p $HOME/.android
-          touch $HOME/.android/repositories.cfg
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
+          # 1. Створюємо папки для SDK та ліцензій
+          mkdir -p $ANDROID_HOME/licenses
           
-          # 2. Встановлюємо стабільні build-tools (33.0.0), щоб уникнути помилок з версією 37
+          # 2. Вручну прописуємо хеші ліцензій (це імітує натискання "y")
+          echo -e "8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb7430c38695f24d67cd\n24333f8a63b6825ea0c5d051f71c2d9b4d0293c3" > $ANDROID_HOME/licenses/android-sdk-license
+          echo -e "84831b9409646a918e30573bab4c9c91346d8abd\n50466322041065615a6820ff53e85ad9e6389c92" > $ANDROID_HOME/licenses/android-sdk-preview-license
+          
+          # 3. Примусово встановлюємо build-tools 33
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "build-tools;33.0.0" "platform-tools" "platforms;android-31"
           
-          # 3. Очищення перед початком
+          # 4. Очищення та запуск збірки
           rm -rf .buildozer
-          
-          # 4. Запуск збірки (автоматично знайде встановлений SDK)
           buildozer -v android debug
         env:
           ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
