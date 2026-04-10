@@ -13,10 +13,14 @@ fullscreen = 0
 android.archs = arm64-v8a, armeabi-v7a
 android.allow_backup = True
 
-# КРИТИЧНІ НАЛАШТУВАННЯ ДЛЯ ГІТХАБУ
+# Налаштування для GitHub Actions
 android.api = 31
 android.minapi = 21
 android.sdk = 31
 android.build_tools_version = 33.0.0
 android.accept_sdk_license = True
 android.skip_update = True
+
+# Важливо: залишаємо ці поля порожніми, щоб брати дані з ENV
+android.sdk_path = 
+android.ndk_path =
