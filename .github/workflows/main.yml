@@ -24,19 +24,16 @@ jobs:
 
       - name: Build APK with Buildozer
         run: |
-          # Вручну створюємо файли підтвердження ліцензій
-          mkdir -p $ANDROID_HOME/licenses
-          echo -e "8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb7430c38695f24d67cd\n24333f8a63b6825ea0c5d051f71c2d9b4d0293c3" > $ANDROID_HOME/licenses/android-sdk-license
-          echo -e "84831b9409646a918e30573bab4c9c91346d8abd\n50466322041065615a6820ff53e85ad9e6389c92" > $ANDROID_HOME/licenses/android-sdk-preview-license
+          # 1. Створюємо структуру папок, яку хоче Buildozer
+          mkdir -p $HOME/.buildozer/android/platform/android-sdk/build-tools/33.0.0
           
-          # Очищення та запуск збірки
-          rm -rf .buildozer
+          # 2. Копіюємо інструменти (включаючи aidl) із системного SDK GitHub у папку Buildozer
+          # Це обійде помилку "Aidl not found"
+          cp -r /usr/local/lib/android/sdk/build-tools/33.0.0/* $HOME/.buildozer/android/platform/android-sdk/build-tools/33.0.0/
+          
+          # 3. Приймаємо ліцензії в обох місцях про всяк випадок
+          mkdir -p $HOME/.buildozer/android/platform/android-sdk/licenses
+          echo -e "8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb7430c38695f24d67cd\n24333f8a63b6825ea0c5d051f71c2d9b4d0293c3" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          
+          # 4. Запускаємо збірку
           buildozer -v android debug
-        env:
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: my-game-package
-          path: bin/*.apk
