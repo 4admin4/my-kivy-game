@@ -24,29 +24,13 @@ jobs:
 
       - name: Build APK with Buildozer
         run: |
-          # 1. Створюємо структуру папок, яку вимагає Buildozer
-          mkdir -p $HOME/.buildozer/android/platform/android-sdk/build-tools/33.0.0
-          mkdir -p $HOME/.buildozer/android/platform/android-sdk/tools/bin
+          # 1. Приймаємо ліцензії в системному SDK
+          yes | sdkmanager --licenses || true
           
-          # 2. Робимо "місток" для sdkmanager (вирішує вашу останню помилку)
-          ln -s $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
-          
-          # 3. Копіюємо build-tools із системи GitHub у Buildozer
-          SYSTEM_BT_PATH=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
-          cp -r $SYSTEM_BT_PATH/* $HOME/.buildozer/android/platform/android-sdk/build-tools/33.0.0/
-          
-          # 4. Вручну прописуємо ліцензії
-          mkdir -p $HOME/.buildozer/android/platform/android-sdk/licenses
-          echo -e "8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb7430c38695f24d67cd\n24333f8a63b6825ea0c5d051f71c2d9b4d0293c3" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo -e "84831b9409646a918e30573bab4c9c91346d8abd\n50466322041065615a6820ff53e85ad9e6389c92" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
-          
-          # 5. Запуск збірки
+          # 2. Запускаємо збірку, вказуючи шлях до системного SDK прямо в команді
+          # Це змусить Buildozer не качати свій SDK, а взяти готовий
           buildozer -v android debug
         env:
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: my-game-package
-          path: bin/*.apk
+          # Вказуємо правильні шляхи до встановлених на GitHub інструментів
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+          ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/25.2.9519653
