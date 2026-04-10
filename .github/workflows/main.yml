@@ -2,7 +2,7 @@ name: Build APK
 on: push
 jobs:
   build:
-    runs-on: ubuntu-22.04  # Фіксуємо стабільну версію системи
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -20,14 +20,20 @@ jobs:
           libncursesw5-dev libgdbm-dev libsqlite3-dev libdb5.3-dev \
           libbz2-dev libexpat1-dev liblzma-dev tk-dev lld
           pip install --upgrade pip
-          pip install "cython<3.0" buildozer  # Фіксуємо версію Cython
+          pip install "cython<3.0" buildozer
 
       - name: Build APK with Buildozer
         run: |
-          # Видаляємо старі спроби, щоб почати "з чистого листа"
+          mkdir -p $HOME/.android
+          touch $HOME/.android/repositories.cfg
+          yes | sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
           rm -rf .buildozer
-          # Запускаємо збірку з детальним логом
           buildozer -v android debug
         env:
-          # Це змусить Buildozer не питати дозволів, а просто працювати
-          APP_ALLOW_BACKUP: 1
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: bin/*.apk
