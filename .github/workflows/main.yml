@@ -24,21 +24,23 @@ jobs:
 
       - name: Build APK with Buildozer
         run: |
-          # 1. Створюємо папки для SDK та ліцензій
-          mkdir -p $ANDROID_HOME/licenses
+          # 1. Примусово приймаємо ліцензії для ВСІХ встановлених компонентів
+          yes | sdkmanager --licenses || true
           
-          # 2. Вручну прописуємо хеші ліцензій (це імітує натискання "y")
-          echo -e "8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb7430c38695f24d67cd\n24333f8a63b6825ea0c5d051f71c2d9b4d0293c3" > $ANDROID_HOME/licenses/android-sdk-license
-          echo -e "84831b9409646a918e30573bab4c9c91346d8abd\n50466322041065615a6820ff53e85ad9e6389c92" > $ANDROID_HOME/licenses/android-sdk-preview-license
+          # 2. Встановлюємо саме ту версію, яку Buildozer шукає за замовчуванням (34 або 33)
+          # Це гарантує, що aidl буде знайдено
+          sdkmanager "build-tools;34.0.0" "platforms;android-31" "platform-tools"
           
-          # 3. Примусово встановлюємо build-tools 33
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "build-tools;33.0.0" "platform-tools" "platforms;android-31"
-          
-          # 4. Очищення та запуск збірки
+          # 3. Видаляємо папку локального SDK Buildozer, щоб він використав системний
           rm -rf .buildozer
+          
+          # 4. Запускаємо збірку
+          # Ми додаємо параметр, щоб Buildozer не намагався оновлювати SDK
           buildozer -v android debug
         env:
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
+          # Вказуємо Buildozer використовувати вже готовий SDK від GitHub
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+          ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk-bundle
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
