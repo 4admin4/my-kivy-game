@@ -24,10 +24,18 @@ jobs:
 
       - name: Build APK with Buildozer
         run: |
+          # 1. Приймаємо ліцензії через прямий шлях до sdkmanager
           mkdir -p $HOME/.android
           touch $HOME/.android/repositories.cfg
-          yes | sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
+          
+          # 2. Встановлюємо стабільні build-tools (33.0.0), щоб уникнути помилок з версією 37
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "build-tools;33.0.0" "platform-tools" "platforms;android-31"
+          
+          # 3. Очищення перед початком
           rm -rf .buildozer
+          
+          # 4. Запуск збірки (автоматично знайде встановлений SDK)
           buildozer -v android debug
         env:
           ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
@@ -35,5 +43,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: package
+          name: my-game-package
           path: bin/*.apk
