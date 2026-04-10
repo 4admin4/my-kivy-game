@@ -2,7 +2,7 @@ name: Build APK
 on: push
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -11,7 +11,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install system dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential libffi-dev python3-dev \
@@ -24,16 +24,28 @@ jobs:
 
       - name: Build APK with Buildozer
         run: |
-          # 1. Створюємо структуру папок, яку хоче Buildozer
-          mkdir -p $HOME/.buildozer/android/platform/android-sdk/build-tools/33.0.0
+          # 1. Знаходимо, де насправді лежать build-tools у системі
+          SYSTEM_BT_PATH=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
+          echo "Found system build-tools at: $SYSTEM_BT_PATH"
           
-          # 2. Копіюємо інструменти (включаючи aidl) із системного SDK GitHub у папку Buildozer
-          # Це обійде помилку "Aidl not found"
-          cp -r /usr/local/lib/android/sdk/build-tools/33.0.0/* $HOME/.buildozer/android/platform/android-sdk/build-tools/33.0.0/
+          # 2. Створюємо папку, яку очікує Buildozer (версія 33.0.0)
+          BT_DEST="$HOME/.buildozer/android/platform/android-sdk/build-tools/33.0.0"
+          mkdir -p "$BT_DEST"
           
-          # 3. Приймаємо ліцензії в обох місцях про всяк випадок
+          # 3. Копіюємо все з системної папки в папку Buildozer
+          cp -r $SYSTEM_BT_PATH/* "$BT_DEST/"
+          
+          # 4. Вручну підтверджуємо ліцензії
           mkdir -p $HOME/.buildozer/android/platform/android-sdk/licenses
           echo -e "8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb7430c38695f24d67cd\n24333f8a63b6825ea0c5d051f71c2d9b4d0293c3" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
           
-          # 4. Запускаємо збірку
+          # 5. Запуск збірки
           buildozer -v android debug
+        env:
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-game-package
+          path: bin/*.apk
