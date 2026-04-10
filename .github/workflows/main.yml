@@ -2,7 +2,7 @@ name: Build APK
 on: push
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -11,7 +11,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential libffi-dev python3-dev \
@@ -24,20 +24,21 @@ jobs:
 
       - name: Build APK with Buildozer
         run: |
-          # 1. Знаходимо, де насправді лежать build-tools у системі
+          # 1. Створюємо структуру папок, яку вимагає Buildozer
+          mkdir -p $HOME/.buildozer/android/platform/android-sdk/build-tools/33.0.0
+          mkdir -p $HOME/.buildozer/android/platform/android-sdk/tools/bin
+          
+          # 2. Робимо "місток" для sdkmanager (вирішує вашу останню помилку)
+          ln -s $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
+          
+          # 3. Копіюємо build-tools із системи GitHub у Buildozer
           SYSTEM_BT_PATH=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
-          echo "Found system build-tools at: $SYSTEM_BT_PATH"
+          cp -r $SYSTEM_BT_PATH/* $HOME/.buildozer/android/platform/android-sdk/build-tools/33.0.0/
           
-          # 2. Створюємо папку, яку очікує Buildozer (версія 33.0.0)
-          BT_DEST="$HOME/.buildozer/android/platform/android-sdk/build-tools/33.0.0"
-          mkdir -p "$BT_DEST"
-          
-          # 3. Копіюємо все з системної папки в папку Buildozer
-          cp -r $SYSTEM_BT_PATH/* "$BT_DEST/"
-          
-          # 4. Вручну підтверджуємо ліцензії
+          # 4. Вручну прописуємо ліцензії
           mkdir -p $HOME/.buildozer/android/platform/android-sdk/licenses
           echo -e "8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb7430c38695f24d67cd\n24333f8a63b6825ea0c5d051f71c2d9b4d0293c3" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo -e "84831b9409646a918e30573bab4c9c91346d8abd\n50466322041065615a6820ff53e85ad9e6389c92" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
           
           # 5. Запуск збірки
           buildozer -v android debug
